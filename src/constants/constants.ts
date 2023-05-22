@@ -44,3 +44,12 @@ export type UpdateBillRequest = {
   };
   body: Partial<BillAttributes>;
 };
+
+export interface BillUsersAttributes {
+  id: string;
+  debt: number;
+  is_regulated: boolean;
+  bill_id: string;
+  user_id: string;
+}
+

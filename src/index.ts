@@ -34,6 +34,7 @@ app.get("/", (req, res) => {
 //bills
 app.get("/api/v1/bills", billRouter);
 app.get("/api/v1/bills/:id", billRouter);
+app.get("/api/v1/bills/user/:id", billRouter);
 app.post("/api/v1/bills", billRouter);
 app.put("/api/v1/bills/:id", billRouter);
 app.delete("/api/v1/bills/:id", billRouter);
