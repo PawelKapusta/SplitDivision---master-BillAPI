@@ -3,7 +3,7 @@ import { Request, Response } from "express";
 import { v4 as uuidv4 } from "uuid";
 import Bill from "../models/billModel";
 import { logger } from "../utils/logger";
-import {BillAttributes, BillUsersAttributes, ErrorType, UpdateBillRequest} from "../constants/constants";
+import {BillAttributes, ErrorType, UpdateBillRequest} from "../constants/constants";
 import BillsUsers from "../models/billUsersModel";
 import { Op } from "sequelize";
 
@@ -65,6 +65,28 @@ router.get("/api/v1/bills/user/:id", async (req: Request, res: Response<BillAttr
         }
       }
     });
+
+    if (!bills) {
+      return res.status(404).send("Bills not found");
+    }
+
+    return res.status(200).json(bills);
+  } catch (error) {
+    logger.error(error.stack);
+    logger.error(error.message);
+    logger.error(error.errors[0].message);
+    return res.status(500).json({ error: error.errors[0].message });
+  }
+});
+
+router.get("/api/v1/bills/group/:id", async (req: Request, res: Response<BillAttributes[] | ErrorType>) => {
+  const groupId: string = req.params.id;
+  try {
+    const bills: Bill[] = await Bill.findAll({
+      where: {
+        group_id: groupId
+      }
+    })
 
     if (!bills) {
       return res.status(404).send("Bills not found");

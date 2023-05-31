@@ -52,4 +52,3 @@ export interface BillUsersAttributes {
   bill_id: string;
   user_id: string;
 }
-
