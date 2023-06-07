@@ -31,7 +31,6 @@ app.get("/", (req, res) => {
   res.send("Hello World! from Bill API");
 });
 
-//bills
 app.get("/api/v1/bills", billRouter);
 app.get("/api/v1/bills/:id", billRouter);
 app.get("/api/v1/bills/user/:id", billRouter);
