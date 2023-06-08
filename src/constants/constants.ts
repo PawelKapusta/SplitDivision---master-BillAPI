@@ -21,6 +21,11 @@ export interface GroupAttributes {
   data_created: Date;
 }
 
+export interface BillUsersDebt {
+  id: string;
+  debt: number;
+}
+
 export interface BillAttributes {
   id: string;
   name: string;
@@ -34,6 +39,22 @@ export interface BillAttributes {
   code_qr: string;
   owner_id: string;
   group_id: string;
+}
+
+export interface BillPostPayload  {
+  id: string;
+  name: string;
+  description: string;
+  data_created: Date;
+  data_end: Date;
+  bill_image: string;
+  currency_type: string;
+  currency_code: string;
+  debt: number;
+  code_qr: string;
+  owner_id: string;
+  group_id: string;
+  usersIdDebtList: BillUsersDebt[]
 }
 
 export type ErrorType = string | { error: string };
@@ -51,4 +72,9 @@ export interface BillUsersAttributes {
   is_regulated: boolean;
   bill_id: string;
   user_id: string;
+}
+
+export interface BillUsersBillResponse  {
+  billUsers: BillUsersAttributes[];
+  users: UserAttributes[];
 }

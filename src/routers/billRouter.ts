@@ -3,9 +3,17 @@ import { Request, Response } from "express";
 import { v4 as uuidv4 } from "uuid";
 import Bill from "../models/billModel";
 import { logger } from "../utils/logger";
-import {BillAttributes, ErrorType, UpdateBillRequest} from "../constants/constants";
+import {
+  BillAttributes,
+  BillPostPayload,
+  BillUsersBillResponse,
+  ErrorType,
+  UpdateBillRequest,
+  UserAttributes
+} from "../constants/constants";
 import BillsUsers from "../models/billUsersModel";
 import { Op } from "sequelize";
+import User from "../models/userModel";
 
 const router = express.Router();
 
@@ -101,6 +109,44 @@ router.get("/api/v1/bills/group/:id", async (req: Request, res: Response<BillAtt
   }
 });
 
+router.get("/api/v1/bills/:id/users", async (req: Request, res: Response<BillUsersBillResponse | ErrorType>) => {
+  const billId: string = req.params.id;
+
+  try {
+    const billUsers: BillsUsers[] = await BillsUsers.findAll({
+      where: {
+        bill_id: billId
+      }
+    })
+
+    const usersIds: string[] = billUsers.map(user => user.dataValues.user_id);
+
+    const users: UserAttributes[] = await User.findAll({
+      where: {
+        id: {
+          [Op.in]: usersIds
+        }
+      }
+    });
+
+    const responseData: BillUsersBillResponse = {
+      billUsers,
+      users
+    }
+
+    if (!users) {
+      return res.status(404).send("Users not found");
+    }
+
+    return res.status(200).json(responseData);
+  } catch (error) {
+    logger.error(error.stack);
+    logger.error(error.message);
+    logger.error(error.errors[0].message);
+    return res.status(500).json({ error: error.errors[0].message });
+  }
+});
+
 router.post(
   "/api/v1/bills",
   async (req: Request<Omit<BillAttributes, "id">>, res: Response<BillAttributes | ErrorType>) => {
@@ -116,11 +162,13 @@ router.post(
       code_qr,
       owner_id,
       group_id,
-    }: Omit<BillAttributes, "id"> = req.body;
+      usersIdDebtList,
+    }: Omit<BillPostPayload, "id"> = req.body;
 
     try {
+      const id =  uuidv4();
       const newBill: BillAttributes = await Bill.create({
-        id: uuidv4(),
+        id,
         name,
         description,
         data_created,
@@ -129,10 +177,27 @@ router.post(
         currency_type,
         currency_code,
         debt,
-        code_qr,
+        code_qr: `${process.env.FRONTEND_URL}/bill/${id}` ,
         owner_id,
         group_id,
       });
+
+
+      for (const user of usersIdDebtList) {
+        console.log("Here adding bills users");
+        try {
+          await BillsUsers.create({
+            id: uuidv4(),
+            debt: user?.debt,
+            bill_id: id,
+            user_id: user?.id
+          })
+          logger.info(`Successfully added user: ${user?.id} to bill in database`);
+        } catch (error) {
+          logger.error(error.message);
+          return res.status(500).json({ error: error.message });
+        }
+      }
 
       return res.status(201).json(newBill);
     } catch (error) {
