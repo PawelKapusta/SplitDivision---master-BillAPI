@@ -1,5 +1,4 @@
-import express from "express";
-import { Request, Response } from "express";
+import express, { Request, Response } from "express";
 import { v4 as uuidv4 } from "uuid";
 import Bill from "../models/billModel";
 import { logger } from "../utils/logger";
@@ -9,7 +8,7 @@ import {
   BillUsersBillResponse,
   ErrorType,
   UpdateBillRequest,
-  UserAttributes
+  UserAttributes,
 } from "../constants/constants";
 import BillsUsers from "../models/billUsersModel";
 import { Op } from "sequelize";
@@ -55,97 +54,106 @@ router.get(
   },
 );
 
-router.get("/api/v1/bills/user/:id", async (req: Request, res: Response<BillAttributes[] | ErrorType>) => {
-  const userId: string = req.params.id;
-  try {
-    const billsUsers: BillsUsers[] = await BillsUsers.findAll({
-      where: {
-        user_id: userId
+router.get(
+  "/api/v1/bills/user/:id",
+  async (req: Request, res: Response<BillAttributes[] | ErrorType>) => {
+    const userId: string = req.params.id;
+    try {
+      const billsUsers: BillsUsers[] = await BillsUsers.findAll({
+        where: {
+          user_id: userId,
+        },
+      });
+
+      const billsIds: string[] = billsUsers.map(bill => bill.dataValues.bill_id);
+
+      const bills: BillAttributes[] = await Bill.findAll({
+        where: {
+          id: {
+            [Op.in]: billsIds,
+          },
+        },
+      });
+
+      if (!bills) {
+        return res.status(404).send("Bills not found");
       }
-    })
 
-    const billsIds: string[] = billsUsers.map(bill => bill.dataValues.bill_id);
-
-    const bills: BillAttributes[] = await Bill.findAll({
-      where: {
-        id: {
-          [Op.in]: billsIds
-        }
-      }
-    });
-
-    if (!bills) {
-      return res.status(404).send("Bills not found");
+      return res.status(200).json(bills);
+    } catch (error) {
+      logger.error(error.stack);
+      logger.error(error.message);
+      logger.error(error.errors[0].message);
+      return res.status(500).json({ error: error.errors[0].message });
     }
+  },
+);
 
-    return res.status(200).json(bills);
-  } catch (error) {
-    logger.error(error.stack);
-    logger.error(error.message);
-    logger.error(error.errors[0].message);
-    return res.status(500).json({ error: error.errors[0].message });
-  }
-});
+router.get(
+  "/api/v1/bills/group/:id",
+  async (req: Request, res: Response<BillAttributes[] | ErrorType>) => {
+    const groupId: string = req.params.id;
+    try {
+      const bills: Bill[] = await Bill.findAll({
+        where: {
+          group_id: groupId,
+        },
+      });
 
-router.get("/api/v1/bills/group/:id", async (req: Request, res: Response<BillAttributes[] | ErrorType>) => {
-  const groupId: string = req.params.id;
-  try {
-    const bills: Bill[] = await Bill.findAll({
-      where: {
-        group_id: groupId
+      if (!bills) {
+        return res.status(404).send("Bills not found");
       }
-    })
 
-    if (!bills) {
-      return res.status(404).send("Bills not found");
+      return res.status(200).json(bills);
+    } catch (error) {
+      logger.error(error.stack);
+      logger.error(error.message);
+      logger.error(error.errors[0].message);
+      return res.status(500).json({ error: error.errors[0].message });
     }
+  },
+);
 
-    return res.status(200).json(bills);
-  } catch (error) {
-    logger.error(error.stack);
-    logger.error(error.message);
-    logger.error(error.errors[0].message);
-    return res.status(500).json({ error: error.errors[0].message });
-  }
-});
+router.get(
+  "/api/v1/bills/:id/users",
+  async (req: Request, res: Response<BillUsersBillResponse | ErrorType>) => {
+    const billId: string = req.params.id;
 
-router.get("/api/v1/bills/:id/users", async (req: Request, res: Response<BillUsersBillResponse | ErrorType>) => {
-  const billId: string = req.params.id;
+    try {
+      const billUsers: BillsUsers[] = await BillsUsers.findAll({
+        where: {
+          bill_id: billId,
+        },
+      });
 
-  try {
-    const billUsers: BillsUsers[] = await BillsUsers.findAll({
-      where: {
-        bill_id: billId
+      const usersIds: string[] = billUsers.map(user => user.dataValues.user_id);
+
+      const users: UserAttributes[] = await User.findAll({
+        where: {
+          id: {
+            [Op.in]: usersIds,
+          },
+        },
+      });
+
+      const responseData: BillUsersBillResponse = {
+        billUsers,
+        users,
+      };
+
+      if (!users) {
+        return res.status(404).send("Users not found");
       }
-    })
 
-    const usersIds: string[] = billUsers.map(user => user.dataValues.user_id);
-
-    const users: UserAttributes[] = await User.findAll({
-      where: {
-        id: {
-          [Op.in]: usersIds
-        }
-      }
-    });
-
-    const responseData: BillUsersBillResponse = {
-      billUsers,
-      users
+      return res.status(200).json(responseData);
+    } catch (error) {
+      logger.error(error.stack);
+      logger.error(error.message);
+      logger.error(error.errors[0].message);
+      return res.status(500).json({ error: error.errors[0].message });
     }
-
-    if (!users) {
-      return res.status(404).send("Users not found");
-    }
-
-    return res.status(200).json(responseData);
-  } catch (error) {
-    logger.error(error.stack);
-    logger.error(error.message);
-    logger.error(error.errors[0].message);
-    return res.status(500).json({ error: error.errors[0].message });
-  }
-});
+  },
+);
 
 router.post(
   "/api/v1/bills",
@@ -166,7 +174,7 @@ router.post(
     }: Omit<BillPostPayload, "id"> = req.body;
 
     try {
-      const id =  uuidv4();
+      const id = uuidv4();
       const newBill: BillAttributes = await Bill.create({
         id,
         name,
@@ -177,21 +185,19 @@ router.post(
         currency_type,
         currency_code,
         debt,
-        code_qr: `${process.env.FRONTEND_URL}/bill/${id}` ,
+        code_qr: `${process.env.FRONTEND_URL}/bill/${id}`,
         owner_id,
         group_id,
       });
 
-
       for (const user of usersIdDebtList) {
-        console.log("Here adding bills users");
         try {
           await BillsUsers.create({
             id: uuidv4(),
             debt: user?.debt,
             bill_id: id,
-            user_id: user?.id
-          })
+            user_id: user?.id,
+          });
           logger.info(`Successfully added user: ${user?.id} to bill in database`);
         } catch (error) {
           logger.error(error.message);

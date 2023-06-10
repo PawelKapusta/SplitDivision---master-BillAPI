@@ -41,7 +41,7 @@ export interface BillAttributes {
   group_id: string;
 }
 
-export interface BillPostPayload  {
+export interface BillPostPayload {
   id: string;
   name: string;
   description: string;
@@ -54,7 +54,7 @@ export interface BillPostPayload  {
   code_qr: string;
   owner_id: string;
   group_id: string;
-  usersIdDebtList: BillUsersDebt[]
+  usersIdDebtList: BillUsersDebt[];
 }
 
 export type ErrorType = string | { error: string };
@@ -74,7 +74,7 @@ export interface BillUsersAttributes {
   user_id: string;
 }
 
-export interface BillUsersBillResponse  {
+export interface BillUsersBillResponse {
   billUsers: BillUsersAttributes[];
   users: UserAttributes[];
 }
