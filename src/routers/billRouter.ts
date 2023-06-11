@@ -5,6 +5,7 @@ import { logger } from "../utils/logger";
 import {
   BillAttributes,
   BillPostPayload,
+  BillUsersAttributes,
   BillUsersBillResponse,
   ErrorType,
   UpdateBillRequest,
@@ -206,6 +207,39 @@ router.post(
       }
 
       return res.status(201).json(newBill);
+    } catch (error) {
+      logger.error(error.stack);
+      logger.error(error.message);
+      logger.error(error.errors[0].message);
+      return res.status(500).json({ error: error.errors[0].message });
+    }
+  },
+);
+
+router.put(
+  "/api/v1/bills/user/:id",
+  async (req: UpdateBillRequest, res: Response<BillUsersAttributes | ErrorType>) => {
+    const bills_usersId: string = req.params.id;
+    const { user_id, bill_id }: Partial<BillUsersAttributes> = req.body;
+
+    try {
+      const bills_users = await BillsUsers.findOne({
+        where: {
+          id: bills_usersId,
+          user_id: user_id,
+          bill_id: bill_id,
+        },
+      });
+
+      if (!bills_users) {
+        return res.status(404).send("This bills_users not exists in the system");
+      }
+
+      bills_users.is_regulated = true;
+
+      await bills_users.save();
+
+      return res.status(200).json(bills_users);
     } catch (error) {
       logger.error(error.stack);
       logger.error(error.message);

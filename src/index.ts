@@ -38,6 +38,7 @@ app.get("/api/v1/bills/:id/users", billRouter);
 app.get("/api/v1/bills/group/:id", billRouter);
 app.post("/api/v1/bills", billRouter);
 app.put("/api/v1/bills/:id", billRouter);
+app.put("/api/v1/bills/user/:id", billRouter);
 app.delete("/api/v1/bills/:id", billRouter);
 
 app.listen(port, () => {
